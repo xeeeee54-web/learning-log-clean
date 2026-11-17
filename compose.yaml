@@ -1,0 +1,27 @@
+
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - sqlite_data:/app/data
+    ports:
+      - "${APP_BIND_IP:-0.0.0.0}:${APP_PORT:-8000}:8000"
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        python manage.py migrate --noinput
+        python manage.py collectstatic --noinput
+        exec gunicorn learning_log.wsgi:application \
+          --bind 0.0.0.0:8000 \
+          --workers 1 \
+          --threads 4 \
+          --timeout 60
+
+volumes:
+  sqlite_data:
+
